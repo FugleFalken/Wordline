@@ -11,11 +11,11 @@ class DiagramViewModel() : ViewModel() {
     private val testLine = Line(1f, 0f)
     private var canvasSize: Size = Size.Zero
 
-    // NOTE: For testing purposes. Final should have an observable collection of instructions
-    fun getTestInstruction(): DrawInstruction {
-        // TODO: Convert testline to instruction
-
-    }
+//    // NOTE: For testing purposes. Final should have an observable collection of instructions
+//    fun getTestInstruction(): DrawInstruction {
+//        // TODO: Convert testline to instruction
+//        return
+//    }
 
     fun updateCanvasSize(size: Size){
         canvasSize = size
