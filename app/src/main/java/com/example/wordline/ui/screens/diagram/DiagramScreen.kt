@@ -1,8 +1,11 @@
 package com.example.wordline.ui.screens.diagram
 
+import android.annotation.SuppressLint
+import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
@@ -32,16 +35,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.VectorProperty
 import androidx.compose.ui.input.pointer.motionEventSpy
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.util.VelocityTracker
+import androidx.compose.ui.input.pointer.util.addPointerInputChange
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.wordline.data.model.Line
+import kotlinx.coroutines.withContext
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DiagramScreen(modifier: Modifier = Modifier, viewModel: DiagramViewModel = viewModel()) {
     val density = LocalDensity.current
@@ -49,6 +57,7 @@ fun DiagramScreen(modifier: Modifier = Modifier, viewModel: DiagramViewModel = v
     val minCardHeight = 40.dp
     val canvasHeight = boxHeight - minCardHeight
     var cardHeight by remember { mutableStateOf(minCardHeight) }
+
     Box(modifier = Modifier
         .fillMaxSize()
         .onSizeChanged { size ->
@@ -70,10 +79,6 @@ fun DiagramScreen(modifier: Modifier = Modifier, viewModel: DiagramViewModel = v
                 }
         ) {
             drawLine(
-//                  start = testInstruction.start,
-//                  end = testInstruction.end,
-//                  color = testInstruction.color,
-//                  strokeWidth = testInstruction.width
                 start = Offset(x = size.width, y = 0f),
                 end = Offset(x = 0f, y = size.height),
                 color = Color.Red,
@@ -84,18 +89,27 @@ fun DiagramScreen(modifier: Modifier = Modifier, viewModel: DiagramViewModel = v
             modifier = Modifier
                 .fillMaxWidth()
                 .height(cardHeight)
-                .draggable(
-                    orientation = Orientation.Vertical,
-                    state = rememberDraggableState { delta ->
-                        cardHeight -= with(density) { delta.toDp() }
-                    }
-                )
+                .pointerInput(Unit) {
+                    detectDragGestures(
+                        onDragStart = { offset ->
+                            if (with(density) { offset.y.toDp() } > minCardHeight) return@detectDragGestures
+
+                        },
+                        onDrag = { change, dragAmount ->
+                            change.consume()
+
+                            cardHeight = maxOf ( cardHeight - with(density) { dragAmount.y.toDp() }, minCardHeight )
+
+                        }
+                    )
+                }
                 .align(Alignment.BottomCenter)
         ) {
             LineSettings()
         }
     }
 }
+
 
 @Composable
 fun LineSettings(modifier: Modifier = Modifier) {
