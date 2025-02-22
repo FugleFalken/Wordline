@@ -57,6 +57,8 @@ fun DiagramScreen(modifier: Modifier = Modifier, viewModel: DiagramViewModel = v
     val minCardHeight = 40.dp
     val canvasHeight = boxHeight - minCardHeight
     var cardHeight by remember { mutableStateOf(minCardHeight) }
+    val velocityTracker = remember { VelocityTracker() }
+    lateinit var layoutCoordinates: LayoutCoordinates
 
     Box(modifier = Modifier
         .fillMaxSize()
@@ -89,17 +91,28 @@ fun DiagramScreen(modifier: Modifier = Modifier, viewModel: DiagramViewModel = v
             modifier = Modifier
                 .fillMaxWidth()
                 .height(cardHeight)
+                .onGloballyPositioned { layoutCoordinates = it  }
                 .pointerInput(Unit) {
                     detectDragGestures(
                         onDragStart = { offset ->
                             if (with(density) { offset.y.toDp() } > minCardHeight) return@detectDragGestures
-
+                            velocityTracker.resetTracking()
                         },
                         onDrag = { change, dragAmount ->
                             change.consume()
-
+                            velocityTracker.addPosition(
+                                change.uptimeMillis,
+                                layoutCoordinates.localToScreen(change.position)
+                            )
+                            Log.d("LAYOUT COORDINATES", layoutCoordinates.localToScreen(change.position).y.toString())
+                            Log.d("CHANGE POSITION", change.position.y.toString())
                             cardHeight = maxOf ( cardHeight - with(density) { dragAmount.y.toDp() }, minCardHeight )
-
+                        },
+                        onDragEnd = {
+                            val velocity = velocityTracker.calculateVelocity()
+                            val flickVelocity = 1000f
+                            Log.d("VELOCITY", velocity.y.toString())
+                            if (velocity.y > flickVelocity) cardHeight = minCardHeight
                         }
                     )
                 }
