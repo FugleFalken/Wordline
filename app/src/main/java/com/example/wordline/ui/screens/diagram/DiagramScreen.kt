@@ -104,14 +104,11 @@ fun DiagramScreen(modifier: Modifier = Modifier, viewModel: DiagramViewModel = v
                                 change.uptimeMillis,
                                 layoutCoordinates.localToScreen(change.position)
                             )
-                            Log.d("LAYOUT COORDINATES", layoutCoordinates.localToScreen(change.position).y.toString())
-                            Log.d("CHANGE POSITION", change.position.y.toString())
                             cardHeight = maxOf ( cardHeight - with(density) { dragAmount.y.toDp() }, minCardHeight )
                         },
                         onDragEnd = {
                             val velocity = velocityTracker.calculateVelocity()
                             val flickVelocity = 1000f
-                            Log.d("VELOCITY", velocity.y.toString())
                             if (velocity.y > flickVelocity) cardHeight = minCardHeight
                         }
                     )
