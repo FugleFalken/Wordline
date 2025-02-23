@@ -58,6 +58,8 @@ fun DiagramScreen(modifier: Modifier = Modifier, viewModel: DiagramViewModel = v
     val canvasHeight = boxHeight - minCardHeight
     var cardHeight by remember { mutableStateOf(minCardHeight) }
     val velocityTracker = remember { VelocityTracker() }
+    var prevCardHeight = remember { 0.dp }
+    var cardExpanded = remember { true }
     lateinit var layoutCoordinates: LayoutCoordinates
 
     Box(modifier = Modifier
@@ -110,6 +112,9 @@ fun DiagramScreen(modifier: Modifier = Modifier, viewModel: DiagramViewModel = v
                             val velocity = velocityTracker.calculateVelocity()
                             val flickVelocity = 1000f
                             if (velocity.y > flickVelocity) cardHeight = minCardHeight
+                            else if (velocity.y < flickVelocity * -1 && !cardExpanded) cardHeight = prevCardHeight
+                            cardExpanded = cardHeight != minCardHeight
+                            if (cardExpanded) prevCardHeight = cardHeight
                         }
                     )
                 }
