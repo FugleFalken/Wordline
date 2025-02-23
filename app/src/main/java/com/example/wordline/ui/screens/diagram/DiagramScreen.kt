@@ -38,7 +38,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 fun DiagramScreen(modifier: Modifier = Modifier, viewModel: DiagramViewModel = viewModel()) {
     val density = LocalDensity.current
     var boxHeight by remember { mutableStateOf(0.dp) }
-    val minCardHeight = 40.dp
+    val minCardHeight = 30.dp
     var cardHeight by remember { mutableStateOf(minCardHeight) }
     val velocityTracker = remember { VelocityTracker() }
     var prevCardHeight = remember { minCardHeight }
