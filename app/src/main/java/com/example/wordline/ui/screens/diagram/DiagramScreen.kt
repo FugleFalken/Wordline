@@ -42,6 +42,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
@@ -49,6 +50,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.wordline.data.model.Line
 import kotlinx.coroutines.withContext
+import kotlin.math.log
 
 @Composable
 fun DiagramScreen(modifier: Modifier = Modifier, viewModel: DiagramViewModel = viewModel()) {
@@ -58,8 +60,8 @@ fun DiagramScreen(modifier: Modifier = Modifier, viewModel: DiagramViewModel = v
     val canvasHeight = boxHeight - minCardHeight
     var cardHeight by remember { mutableStateOf(minCardHeight) }
     val velocityTracker = remember { VelocityTracker() }
-    var prevCardHeight = remember { 0.dp }
-    var cardExpanded = remember { true }
+    var prevCardHeight = remember { minCardHeight }
+    var cardExpanded = remember { false }
     lateinit var layoutCoordinates: LayoutCoordinates
 
     Box(modifier = Modifier
@@ -93,7 +95,7 @@ fun DiagramScreen(modifier: Modifier = Modifier, viewModel: DiagramViewModel = v
             modifier = Modifier
                 .fillMaxWidth()
                 .height(cardHeight)
-                .onGloballyPositioned { layoutCoordinates = it  }
+                .onGloballyPositioned { layoutCoordinates = it }
                 .pointerInput(Unit) {
                     detectDragGestures(
                         onDragStart = { offset ->
@@ -106,13 +108,18 @@ fun DiagramScreen(modifier: Modifier = Modifier, viewModel: DiagramViewModel = v
                                 change.uptimeMillis,
                                 layoutCoordinates.localToScreen(change.position)
                             )
-                            cardHeight = maxOf ( cardHeight - with(density) { dragAmount.y.toDp() }, minCardHeight )
+                            cardHeight = maxOf(
+                                cardHeight - with(density) { dragAmount.y.toDp() },
+                                minCardHeight
+                            )
                         },
                         onDragEnd = {
                             val velocity = velocityTracker.calculateVelocity()
-                            val flickVelocity = 1000f
+                            val flickVelocity = 800f
                             if (velocity.y > flickVelocity) cardHeight = minCardHeight
-                            else if (velocity.y < flickVelocity * -1 && !cardExpanded) cardHeight = prevCardHeight
+                            else if (velocity.y < flickVelocity * -1 && !cardExpanded && prevCardHeight != minCardHeight) {
+                                cardHeight = prevCardHeight
+                            }
                             cardExpanded = cardHeight != minCardHeight
                             if (cardExpanded) prevCardHeight = cardHeight
                         }
