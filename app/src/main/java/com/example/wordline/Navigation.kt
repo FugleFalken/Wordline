@@ -1,6 +1,5 @@
 package com.example.wordline
 
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
@@ -23,7 +22,9 @@ fun Navigation(modifier: Modifier = Modifier) {
         modifier = modifier
     ) {
         composable(Screens.DIAGRAM.name) {
-            DiagramScreen()
+            DiagramScreen(
+                onSettingsTapped = { navController.navigate(Screens.SETTINGS.name) }
+            )
         }
         composable(Screens.SETTINGS.name) {
             SettingsScreen()

@@ -5,13 +5,20 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,6 +29,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.util.VelocityTracker
@@ -35,26 +43,27 @@ import androidx.compose.ui.unit.toSize
 import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
-fun DiagramScreen(modifier: Modifier = Modifier, viewModel: DiagramViewModel = viewModel()) {
+fun DiagramScreen(
+    onSettingsTapped: () -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: DiagramViewModel = viewModel()
+) {
     val density = LocalDensity.current
-    var boxHeight by remember { mutableStateOf(0.dp) }
     val minCardHeight = 30.dp
     var cardHeight by remember { mutableStateOf(minCardHeight) }
     val velocityTracker = remember { VelocityTracker() }
     var prevCardHeight = remember { minCardHeight }
-    var cardExpanded = remember { false }
+    var cardExpanded by remember { mutableStateOf(false) }
+    var offsetWithinDraggableZone = remember { true }
     lateinit var layoutCoordinates: LayoutCoordinates
 
-    Box(modifier = Modifier
-        .fillMaxSize()
-        .onSizeChanged { size ->
-            boxHeight = with(density) { size.height.toDp() }
-        }
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
     ) {
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Blue)
                 .onSizeChanged { size ->
                     viewModel.updateCanvasSize(size.toSize())
                 }
@@ -81,11 +90,13 @@ fun DiagramScreen(modifier: Modifier = Modifier, viewModel: DiagramViewModel = v
                 .pointerInput(Unit) {
                     detectDragGestures(
                         onDragStart = { offset ->
-                            if (with(density) { offset.y.toDp() } > minCardHeight) return@detectDragGestures
+                            offsetWithinDraggableZone =
+                                with(density) { offset.y.toDp() } < minCardHeight
+                            if (!offsetWithinDraggableZone) return@detectDragGestures
                             velocityTracker.resetTracking()
                         },
                         onDrag = { change, dragAmount ->
-                            change.consume()
+                            if (!offsetWithinDraggableZone) return@detectDragGestures
                             velocityTracker.addPosition(
                                 change.uptimeMillis,
                                 layoutCoordinates.localToScreen(change.position)
@@ -96,8 +107,9 @@ fun DiagramScreen(modifier: Modifier = Modifier, viewModel: DiagramViewModel = v
                             )
                         },
                         onDragEnd = {
+                            if (!offsetWithinDraggableZone) return@detectDragGestures
                             val velocity = velocityTracker.calculateVelocity()
-                            val flickVelocity = 800f
+                            val flickVelocity = 900f
                             if (velocity.y > flickVelocity) cardHeight = minCardHeight
                             else if (velocity.y < flickVelocity * -1 && !cardExpanded && prevCardHeight != minCardHeight) {
                                 cardHeight = prevCardHeight
@@ -109,7 +121,32 @@ fun DiagramScreen(modifier: Modifier = Modifier, viewModel: DiagramViewModel = v
                 }
                 .align(Alignment.BottomCenter)
         ) {
-            LineSettings()
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(minCardHeight)
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(MaterialTheme.colorScheme.outline, Color.Transparent),
+                            startY = 0f,
+                            endY = with(density) { minCardHeight.toPx() }
+                        )
+                    )
+            ) {
+                Spacer(modifier = Modifier.weight(1f))
+                IconButton(
+                    modifier = Modifier,
+                    onClick = onSettingsTapped
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Settings,
+                        contentDescription = "Placeholder"
+                    )
+                }
+            }
+            if (cardExpanded) {
+                LineSettings()
+            }
         }
     }
 }
@@ -126,6 +163,7 @@ fun LineSettings(modifier: Modifier = Modifier) {
 private fun DiagramScreenPreview() {
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         DiagramScreen(
+            {},
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
